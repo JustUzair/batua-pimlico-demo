@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-namespace, @typescript-eslint/no-empty-object-type, @typescript-eslint/no-unused-vars */
+
 "use client";
 
 import { setupBatua } from "@/lib/utils/batuaClient";
@@ -36,7 +37,7 @@ export default function BatuaPage() {
   const executeBatchTx = async () => {
     const res = await sendCallsAsync({
       account: account.address,
-      chainId: account.chainId,
+      chainId: account.chainId as 1 | 11155111 | undefined,
       calls: [
         {
           to: TEST_ERC20_TOKEN_ADDRESS,
@@ -58,14 +59,18 @@ export default function BatuaPage() {
         //   to: "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
         //   value: parseEther("0.0001"),
         // },
-      ],
+      ] as any,
     });
     console.log(res.id);
 
     console.log(callReceipts);
-    if (callReceipts?.status == "success")
+    if (
+      callReceipts &&
+      callReceipts?.status == "success" &&
+      callReceipts.receipts
+    )
       setBatchTxUrl(
-        `https://sepolia.etherscan.io/tx/${callReceipts?.receipts[0].transactionHash}`
+        `https://sepolia.etherscan.io/tx/${callReceipts?.receipts[0]?.transactionHash}`
       );
   };
 
@@ -91,7 +96,7 @@ export default function BatuaPage() {
         // >
         //   Create Batua & Connect
         // </button>
-        <ConnectButton onClick={setupBatua} />
+        <ConnectButton />
       ) : (
         <div className="flex flex-col items-center space-y-4">
           <ConnectButton />
@@ -102,25 +107,27 @@ export default function BatuaPage() {
             Send Batch Transaction
           </button>
 
-          {callReceipts && callReceipts.status == "pending" && (
+          {callReceipts && callReceipts?.status == "pending" && (
             <p className="text-yellow-500">Executing...</p>
           )}
-          {callReceipts && callReceipts.status == "failure" && (
+          {callReceipts && callReceipts?.status == "failure" && (
             <p className="text-yellow-500">Execution Failed</p>
           )}
-          {callReceipts && callReceipts.status && (
-            <p className="text-green-500">
-              Execution Successful
-              <br />
-              <Link
-                target="_blank"
-                href={`https://sepolia.etherscan.io/tx/${callReceipts.receipts[0].transactionHash}`}
-                className="font-bold underline break-words"
-              >
-                {`https://sepolia.etherscan.io/tx/${callReceipts.receipts[0].transactionHash}`}
-              </Link>
-            </p>
-          )}
+          {callReceipts &&
+            callReceipts.receipts &&
+            callReceipts?.status == "success" && (
+              <p className="text-green-500">
+                Execution Successful
+                <br />
+                <Link
+                  target="_blank"
+                  href={`https://sepolia.etherscan.io/tx/${callReceipts.receipts[0].transactionHash}`}
+                  className="font-bold underline break-words"
+                >
+                  {`https://sepolia.etherscan.io/tx/${callReceipts.receipts[0].transactionHash}`}
+                </Link>
+              </p>
+            )}
         </div>
       )}
     </main>

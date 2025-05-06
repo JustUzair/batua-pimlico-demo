@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-// lib/wagmiConfig.ts
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-namespace, @typescript-eslint/no-empty-object-type, @typescript-eslint/no-unused-vars */
+
 "use client";
 
 import { createConfig, http } from "wagmi";
