@@ -6,8 +6,9 @@ import "./globals.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
 import { config } from "@/lib/utils/wagmiConfig";
-
+import { RainbowKitProvider } from "@rainbow-me/rainbowkit";
 const queryClient = new QueryClient();
+import "@rainbow-me/rainbowkit/styles.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,7 +32,7 @@ export default function RootLayout({
       >
         <WagmiProvider config={config}>
           <QueryClientProvider client={queryClient}>
-            {children}
+            <RainbowKitProvider>{children}</RainbowKitProvider>
           </QueryClientProvider>
         </WagmiProvider>
       </body>
