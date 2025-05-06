@@ -11,6 +11,7 @@ const pimlicoApiKey = process.env.NEXT_PUBLIC_PIMLICO_API_KEY!;
 export const buildbearSandboxUrl =
   "https://rpc.buildbear.io/cooing-daredevil-0ece5ad2";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const pimlicoClient = createPimlicoClient({
   transport: http(buildbearSandboxUrl),
   entryPoint: {

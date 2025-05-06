@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { setupBatua } from "@/lib/utils/batuaClient";
@@ -16,8 +17,6 @@ import { config } from "@/lib/utils/wagmiConfig";
 
 import { erc20Abi } from "viem";
 import Link from "next/link";
-import { waitForUserOperationReceipt } from "viem/account-abstraction";
-import { waitForCallsStatus } from "viem/experimental";
 
 export default function BatuaPage() {
   //   const { connect, connectors } = useConnect();
