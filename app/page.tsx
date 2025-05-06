@@ -1,103 +1,130 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { setupBatua } from "@/lib/utils/batuaClient";
+import { useAccount, useConnect } from "wagmi";
+import { useCallback, useEffect, useState } from "react";
+import { useSendCalls, useWaitForCallsStatus } from "wagmi";
+import { encodeFunctionData, parseUnits, parseEther } from "viem";
+import {
+  TEST_ERC20_TOKEN_ADDRESS,
+  randomAddressOne,
+  //   randomAddressTwo,
+} from "@/lib/constants";
+import { config } from "@/lib/utils/wagmiConfig";
+
+import { erc20Abi } from "viem";
+
+export default function BatuaPage() {
+  const { connect, connectors } = useConnect();
+  const account = useAccount();
+
+  const { data: callStatus, sendCallsAsync } = useSendCalls({
+    config,
+  });
+  const { data: callReceipts } = useWaitForCallsStatus({ id: callStatus?.id });
+
+  const [batuaCreated, setBatuaCreated] = useState(false);
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    // Preload Batua when component mounts
+    setupBatua();
+    setHasMounted(true); // ✅ Now we are sure we're client-side
+  }, []);
+
+  const createBatuaAndConnect = useCallback(async () => {
+    setupBatua();
+
+    const injectedConnector = connectors.find(c => c.id === "injected");
+    if (!injectedConnector) {
+      console.error("No injected connector found");
+      return;
+    }
+
+    await connect({ connector: injectedConnector });
+
+    // After successful connection
+    setBatuaCreated(true);
+  }, [connect, connectors]);
+
+  const callSucceeded = callReceipts?.status === "success";
+  const callPending = callReceipts?.status === "pending";
+
+  // ⛔ Important fix: Don't render anything until mounted
+  if (!hasMounted) {
+    return null;
+  }
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <main className="flex min-h-screen flex-col items-center justify-center p-24 space-y-8">
+      <h1 className="text-4xl">Welcome to the Batua Dapp</h1>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      {!account.isConnected ? (
+        <button
+          onClick={createBatuaAndConnect}
+          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+        >
+          Create Batua & Connect
+        </button>
+      ) : (
+        <div className="flex flex-col items-center space-y-4">
+          <p className="text-green-600 text-lg">
+            Connected as: {account.address}
+          </p>
+
+          {batuaCreated && (
+            <p className="text-blue-500 text-lg">
+              ✅ Batua wallet created and connected successfully!
+            </p>
+          )}
+
+          <button
+            onClick={async () => {
+              const res = await sendCallsAsync({
+                account: account.address,
+                chainId: account.chainId,
+                calls: [
+                  {
+                    to: TEST_ERC20_TOKEN_ADDRESS,
+                    data: encodeFunctionData({
+                      abi: erc20Abi,
+                      functionName: "approve",
+                      args: [randomAddressOne, parseUnits("1", 6)],
+                    }),
+                  },
+                  {
+                    to: TEST_ERC20_TOKEN_ADDRESS,
+                    data: encodeFunctionData({
+                      abi: erc20Abi,
+                      functionName: "transfer",
+                      args: [randomAddressOne, parseUnits("1", 6)],
+                    }),
+                  },
+                  //   {
+                  //     to: "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+                  //     value: parseEther("1"),
+                  //   },
+                ],
+              });
+              console.log(res);
+            }}
+            className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            Send Batch Transaction
+          </button>
+
+          {callPending && (
+            <p className="text-yellow-500">Transaction Pending...</p>
+          )}
+
+          {callSucceeded && (
+            <p className="text-green-500">
+              Transaction Successful! Hash:{" "}
+              {callReceipts?.receipts?.[0]?.transactionHash}
+            </p>
+          )}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      )}
+    </main>
   );
 }
