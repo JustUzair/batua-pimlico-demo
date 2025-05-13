@@ -42,4 +42,7 @@ export const config = getDefaultConfig({
   //   chains: [BBSandboxNetwork, mainnet],
   chains: [sepolia, mainnet],
   ssr: true, // If your dApp uses server side rendering (SSR)
+  transports: {
+    [sepolia.id]: http("https://1rpc.io/sepolia"),
+  },
 });
